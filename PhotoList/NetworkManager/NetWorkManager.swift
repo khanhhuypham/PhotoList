@@ -124,25 +124,29 @@ extension NetworkManager{
             }
 
             switch httpResponse.statusCode {
-            case 200...299:
-                do {
-                    let decoded = try JSONDecoder().decode(T.self, from: data)
-                    return .success(decoded)
-                } catch {
-                    return .failure(NetworkError.decodingError(error))
-                }
-            case 400:
-                let message = String(data: data, encoding: .utf8) ?? "Bad Request"
-                return .failure(NetworkError.badRequest(message: message))
-            case 404:
-                let message = String(data: data, encoding: .utf8) ?? "Not Found"
-                return .failure(NetworkError.badRequest(message: message))
-            default:
-                let message = String(data: data, encoding: .utf8)
-                return .failure(NetworkError.serverError(statusCode: httpResponse.statusCode, message: message))
+                case 200...299:
+                    do {
+                        let decoded = try JSONDecoder().decode(T.self, from: data)
+                        return .success(decoded)
+                    } catch {
+                        return .failure(NetworkError.decodingError(error))
+                    }
+                
+                case 400:
+                    let message = String(data: data, encoding: .utf8) ?? "Bad Request"
+                    return .failure(NetworkError.badRequest(message: message))
+                
+                case 404:
+                    let message = String(data: data, encoding: .utf8) ?? "Not Found"
+                    return .failure(NetworkError.badRequest(message: message))
+                
+                default:
+                    let message = String(data: data, encoding: .utf8)
+                    return .failure(NetworkError.serverError(statusCode: httpResponse.statusCode, message: message))
+                
             }
         } catch let error as URLError where error.code == .timedOut {
-            return .failure(NetworkError.networkError(error))
+            return .failure(NetworkError.timeout(error))
         } catch {
             return .failure(NetworkError.unknown)
         }
@@ -158,6 +162,7 @@ enum NetworkError: Error {
     case networkError(Error)
     case decodingError(Error)
     case serverError(statusCode: Int, message: String?)
+    case timeout(Error)
     case unknown
     
     var description: String {
@@ -180,6 +185,9 @@ enum NetworkError: Error {
             case .serverError(statusCode: let statusCode, message: let message):
                 return message ?? "Server Error (\(statusCode))"
             
+            case .timeout:
+                return "timeout Error"
+                
             case .unknown:
                 return "Unknown Error"
         }

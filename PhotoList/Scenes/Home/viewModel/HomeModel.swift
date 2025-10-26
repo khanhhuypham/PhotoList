@@ -68,9 +68,9 @@ extension HomeViewModel{
   
         switch result {
             case .success(let data):
-       
+                
                 guard data.isEmpty == false else {
-              
+                    
                     APIParameter.isAPICalling = false
                     return
                 }
@@ -79,24 +79,27 @@ extension HomeViewModel{
                 APIParameter.page = page
                 APIParameter.isGetFullData = photoList.count >= 100
                 APIParameter.isAPICalling = false
-            
+                
                 // Update UI
                 if let tableView = view?.tableView {
-                   UIView.performWithoutAnimation {
-                       tableView.performBatchUpdates({
-                           let end = photoList.count - 1
-                           let indexPaths = (start...end).map { IndexPath(row: $0, section: 0) }
-                           tableView.insertRows(at: indexPaths, with: .none)
-                       })
-                   }
+                    UIView.performWithoutAnimation {
+                        tableView.performBatchUpdates({
+                            let end = photoList.count - 1
+                            let indexPaths = (start...end).map { IndexPath(row: $0, section: 0) }
+                            tableView.insertRows(at: indexPaths, with: .none)
+                        })
+                    }
                 }
-  
+                
                 break
-
+                
             case .failure(let error):
                 
                 APIParameter.isAPICalling = false
-                dLog("❌ API error: \(error)")
+                if let err = error as? NetworkError{
+                    dLog("❌ API error: \(err.description)")
+                }
+                
             
         }
     }
