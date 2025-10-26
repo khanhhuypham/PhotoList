@@ -79,11 +79,11 @@ extension NetworkManager{
 
 extension NetworkManager{
     
-    static func callAPIAsync<T: Decodable>(logRequest: Bool = true,netWorkManger: NetworkManager) async -> Result<T, Error> {
+    static func callAPIAsync<T: Decodable>(logRequest: Bool = true,netWorkManger: NetworkManager,timeout: TimeInterval = 15) async -> Result<T, Error>
+    {
         Loading.show()
         defer { Loading.hide() }
 
-        // Build URL
         var components = URLComponents(string: environmentMode.baseUrl)
         components?.scheme = "https"
         components?.path = netWorkManger.path
@@ -97,7 +97,6 @@ extension NetworkManager{
             return .failure(NetworkError.invalidURL)
         }
 
-        // Create request
         let request: URLRequest
         do {
             request = try makeRequest(from: netWorkManger, url: url)
@@ -105,51 +104,50 @@ extension NetworkManager{
             return .failure(error)
         }
 
-        // Log request if needed
+        // Custom session with timeout
+        let config = URLSessionConfiguration.default
+        config.timeoutIntervalForRequest = timeout
+        config.timeoutIntervalForResource = timeout * 2
+        let session = URLSession(configuration: config)
+
         if logRequest {
             dLog("📡 Method: \(netWorkManger.method.description)")
             request.allHTTPHeaderFields?.forEach { dLog("\($0.key): \($0.value)") }
             dLog("🌐 URL: \(url.absoluteString)")
         }
 
-        // Execute request
-        let data: Data
-        let response: URLResponse
         do {
-            (data, response) = try await URLSession.shared.data(for: request)
-        } catch let error as URLError {
+            let (data, response) = try await session.data(for: request)
+
+            guard let httpResponse = response as? HTTPURLResponse else {
+                return .failure(NetworkError.unknown)
+            }
+
+            switch httpResponse.statusCode {
+            case 200...299:
+                do {
+                    let decoded = try JSONDecoder().decode(T.self, from: data)
+                    return .success(decoded)
+                } catch {
+                    return .failure(NetworkError.decodingError(error))
+                }
+            case 400:
+                let message = String(data: data, encoding: .utf8) ?? "Bad Request"
+                return .failure(NetworkError.badRequest(message: message))
+            case 404:
+                let message = String(data: data, encoding: .utf8) ?? "Not Found"
+                return .failure(NetworkError.badRequest(message: message))
+            default:
+                let message = String(data: data, encoding: .utf8)
+                return .failure(NetworkError.serverError(statusCode: httpResponse.statusCode, message: message))
+            }
+        } catch let error as URLError where error.code == .timedOut {
             return .failure(NetworkError.networkError(error))
         } catch {
             return .failure(NetworkError.unknown)
         }
-
-        // Validate response
-        guard let httpResponse = response as? HTTPURLResponse else {
-            return .failure(NetworkError.unknown)
-        }
-
-        switch httpResponse.statusCode {
-        case 200...299:
-            do {
-                let decoded = try JSONDecoder().decode(T.self, from: data)
-                return .success(decoded)
-            } catch {
-                return .failure(NetworkError.decodingError(error))
-            }
-
-        case 400:
-            let message = String(data: data, encoding: .utf8) ?? "Bad Request"
-            return .failure(NetworkError.badRequest(message: message))
-
-        case 404:
-            let message = String(data: data, encoding: .utf8) ?? "Not Found"
-            return .failure(NetworkError.badRequest(message: message))
-
-        default:
-            let message = String(data: data, encoding: .utf8)
-            return .failure(NetworkError.serverError(statusCode: httpResponse.statusCode, message: message))
-        }
     }
+
 
 }
 

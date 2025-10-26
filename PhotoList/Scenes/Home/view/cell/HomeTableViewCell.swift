@@ -45,7 +45,7 @@ class HomeTableViewCell: UITableViewCell {
   
          
             if let url = URL(string: data.download_url) {
-                photo.loadImage(from: url, placeholder: UIImage(named: "placeholder"))
+                photo.loadImage(from: url, placeholder: UIImage(named: "image-defauft"))
             }
             name.text = data.author
             size.text = String(format: "%dx%d", data.width, data.height)
