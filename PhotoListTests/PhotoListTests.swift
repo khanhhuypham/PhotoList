@@ -32,5 +32,26 @@ final class PhotoListTests: XCTestCase {
             // Put the code you want to measure the time of here.
         }
     }
+    
+    
+//    func testFetchPostList() async{
+//        let result: Result<[Photo], Error> = await NetworkManager.callAPIResultAsync(netWorkManger: .getPhotoList(limit: 100, page: 1))
+//        
+//        switch result {
+//            case .success(let data):
+//            
+//                guard data != nil else {
+//                    return
+//                }
+//                
+//              
+//                XCTAssertNotNil(data)
+//        
+//
+//            case .failure(let error):
+//
+//                dLog("❌ Login API error: \(error)")
+//        }
+//   }
 
 }
