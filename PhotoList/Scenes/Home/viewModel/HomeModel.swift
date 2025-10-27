@@ -99,8 +99,6 @@ extension HomeViewModel{
                 if let err = error as? NetworkError{
                     dLog("❌ API error: \(err.description)")
                 }
-                
-            
         }
     }
 

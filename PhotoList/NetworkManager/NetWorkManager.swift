@@ -79,7 +79,7 @@ extension NetworkManager{
 
 extension NetworkManager{
     
-    static func callAPIAsync<T: Decodable>(logRequest: Bool = true,netWorkManger: NetworkManager,timeout: TimeInterval = 5) async -> Result<T, Error>
+    static func callAPIAsync<T: Decodable>(logRequest: Bool = true,netWorkManger: NetworkManager,timeout: TimeInterval = 15) async -> Result<T, Error>
     {
         Loading.show()
         defer { Loading.hide() }
